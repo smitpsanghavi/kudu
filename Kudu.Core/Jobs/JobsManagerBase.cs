@@ -62,7 +62,7 @@ namespace Kudu.Core.Jobs
         }
     }
 
-    public abstract class JobsManagerBase<TJob> : JobsManagerBase, IJobsManager<TJob>, IDisposable, IRegisteredObject where TJob : JobBase, new()
+    public abstract class JobsManagerBase<TJob> : JobsManagerBase, IJobsManager<TJob>, IDisposable where TJob : JobBase, new()
     {
         private const string DefaultScriptFileName = "run";
 
@@ -108,7 +108,6 @@ namespace Kudu.Core.Jobs
             JobsBinariesPath = Path.Combine(basePath, jobsTypePath);
             JobsDataPath = Path.Combine(Environment.JobsDataPath, jobsTypePath);
             JobsWatcher = new JobsFileWatcher(JobsBinariesPath, OnJobChanged, null, ListJobNames, traceFactory, analytics, GetJobType());
-            HostingEnvironment.RegisterObject(this);
         }
 
         protected virtual IEnumerable<string> ListJobNames(bool forceRefreshCache)
@@ -453,7 +452,6 @@ namespace Kudu.Core.Jobs
 
             IsShuttingdown = true;
             OnShutdown();
-            HostingEnvironment.UnregisterObject(this);
         }
 
         protected abstract void OnShutdown();
@@ -502,28 +500,7 @@ namespace Kudu.Core.Jobs
             return new Uri("{0}/azurejobs/#/jobs/{1}/{2}".FormatInvariant(AppBaseUrlPrefix, _jobsTypePath, jobName));
         }
 
-        protected string AppBaseUrlPrefix
-        {
-            get
-            {
-                if (HttpContext.Current == null)
-                {
-                    if (string.IsNullOrEmpty(_lastKnownAppBaseUrlPrefix))
-                    {
-                        var httpHost = System.Environment.GetEnvironmentVariable(Constants.HttpHost);
-                        if (!string.IsNullOrEmpty(httpHost))
-                        {
-                            return "https://{0}".FormatInvariant(httpHost);
-                        }
-                    }
-
-                    return _lastKnownAppBaseUrlPrefix;
-                }
-
-                _lastKnownAppBaseUrlPrefix = HttpContext.Current.Request.Url.GetLeftPart(UriPartial.Authority);
-                return _lastKnownAppBaseUrlPrefix;
-            }
-        }
+        protected string AppBaseUrlPrefix => null;
 
         private static IEnumerable<DirectoryInfoBase> ListJobDirectories(string path, string searchPattern = "*")
         {
